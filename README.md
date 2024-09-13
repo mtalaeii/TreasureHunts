@@ -1,9 +1,9 @@
-##TreasureHunts
+# TreasureHunts
 
 A plugin that create event for give online player some random treasure hunts!
 
 
-#Installation
+## Installation
 for clone and build library in your system type :
 ```bash
 git clone https://github.com/mtalaeii/TreasureHunts.git && cd TreasureHunts && gradlew build
@@ -11,7 +11,7 @@ git clone https://github.com/mtalaeii/TreasureHunts.git && cd TreasureHunts && g
 ```
 Then pick up .jar file from build/libs and put it in your server plugins directory!
 
-#Configuration
+## Configuration
 ```yaml
 treasure-chest:
   items:
