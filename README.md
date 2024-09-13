@@ -26,3 +26,4 @@ treasure-chest:
 This is default config you can modify items(supported all vanilla items) + count
 max-items-per-chest parameter allow the max items can be placed in the chest (for example here is 2 it means 2 item per chest maximum is 27)
 and spawtime is the ticks need for every chest spawns (here is 5 minutes that take 6000 ticks set)
+for modification you can change resources/config.yml file
