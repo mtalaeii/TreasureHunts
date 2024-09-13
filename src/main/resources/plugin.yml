@@ -1,0 +1,8 @@
+name: TreasureHunts
+version: '${version}'
+main: org.mahdi.testmode.treasurehunts.TreasureHunts
+api-version: '1.20'
+commands:
+  treasures:
+    description: Opens the treasure UI menu
+    usage: /treasures

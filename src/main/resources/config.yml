@@ -1,0 +1,8 @@
+treasure-chest:
+  items:
+    DIAMOND: 10
+    IRON_INGOT: 10
+    GOLD_INGOT: 10
+    NETHERITE_INGOT: 10
+  max-items-per-chest: 2
+  spawntime : 6000 #its ticks 6000 ticks = every 5 minutes
