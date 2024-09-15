@@ -6,6 +6,3 @@ commands:
   treasures:
     description: ""
     usage: "/treasures"
-  test:
-    description: "Test command"
-    usage: "/test"
