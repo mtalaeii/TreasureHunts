@@ -1,7 +1,6 @@
 package org.mahdi.testmode.treasurehunts.commands;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,7 +12,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.mahdi.testmode.treasurehunts.TreasureHunts;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Objects;
+
 
 public class TreasureCommand implements CommandExecutor {
     private final TreasureHunts plugin;
@@ -35,7 +35,7 @@ public class TreasureCommand implements CommandExecutor {
         plugin.handler.getActiveTreasures().entrySet().stream().map(treasure -> {
             ItemStack treasureItem = new ItemStack(Material.CHEST);
             ItemMeta meta = treasureItem.getItemMeta();
-            meta.setDisplayName(treasure.getValue() + " at " + treasure.getKey());
+            Objects.requireNonNull(meta).setDisplayName(treasure.getValue() + " at " + treasure.getKey());
             treasureItem.setItemMeta(meta);
             return treasureItem;
         }).forEach(treasureInventory::addItem);
