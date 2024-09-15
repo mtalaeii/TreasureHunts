@@ -37,7 +37,7 @@ public class TreasureSpawnHandler {
         if (maxItemsPerChest < 1) maxItemsPerChest = 1;
         if (maxItemsPerChest > 27) maxItemsPerChest = 27;
 
-        itemConfig = config.getConfigurationSection("treasure-chest.items").getKeys(false).stream()
+        itemConfig = Objects.requireNonNull(config.getConfigurationSection("treasure-chest.items")).getKeys(false).stream()
                 .map(key -> {
                     try {
                         Material material = Material.valueOf(key);
@@ -56,13 +56,6 @@ public class TreasureSpawnHandler {
         if (maxItemsPerChest > 27) maxItemsPerChest = 27;
     }
 
-    public Map<Material, Integer> getItemConfig() {
-        return itemConfig;
-    }
-
-    public int getMaxItemsPerChest() {
-        return maxItemsPerChest;
-    }
 
     public void startTreasureSpawner() {
         int spawnTime = plugin.getConfig().getInt("treasure-chest.spawntime") < 0 ? 6000 : plugin.getConfig().getInt("treasure-chest.spawntime");
