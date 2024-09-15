@@ -22,4 +22,5 @@ public final class TreasureHunts extends JavaPlugin {
     public void onDisable() {
         this.handler.cleanupActiveChests();
     }
+
 }

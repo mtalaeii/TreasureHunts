@@ -10,7 +10,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.mahdi.testmode.treasurehunts.TreasureHunts;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TreasureCommand implements CommandExecutor {
     private final TreasureHunts plugin;
@@ -20,20 +23,22 @@ public class TreasureCommand implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) return false;
+    public boolean onCommand(
+            @NonNull CommandSender sender,
+            @NonNull Command command,
+            @NonNull String label,
+            @NonNull String[] args
+    ) {
+        if (!(sender instanceof Player player)) return false;
 
-        Player player = (Player) sender;
         Inventory treasureInventory = Bukkit.createInventory(null, 27, "Active Treasures");
-        int counter = 1;
-        for (Location location : plugin.handler.getActiveTreasures().keySet()) {
+        plugin.handler.getActiveTreasures().entrySet().stream().map(treasure -> {
             ItemStack treasureItem = new ItemStack(Material.CHEST);
             ItemMeta meta = treasureItem.getItemMeta();
-            meta.setDisplayName("#Treasure " + counter + " at " + location);
+            meta.setDisplayName(treasure.getValue() + " at " + treasure.getKey());
             treasureItem.setItemMeta(meta);
-            treasureInventory.addItem(treasureItem);
-        }
-
+            return treasureItem;
+        }).forEach(treasureInventory::addItem);
         player.openInventory(treasureInventory);
         return true;
     }

@@ -12,35 +12,44 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.mahdi.testmode.treasurehunts.TreasureHunts;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class TreasureSpawnHandler {
-    private TreasureHunts plugin;
+    private final TreasureHunts plugin;
     private Map<Material, Integer> itemConfig;
     private int maxItemsPerChest;
 
-    private Map<Location, String> activeTreasures = new HashMap<>();
-    private Map<Player, Location> playerTraces = new HashMap<>();
+    private final Map<Location, String> activeTreasures = new HashMap<>();
+    private final Map<Player, Location> playerTraces = new HashMap<>();
 
-    private static int chestCounter = 0;
+    private final AtomicInteger chestCounter = new AtomicInteger();
 
-    public TreasureSpawnHandler(TreasureHunts plugin){
+    public TreasureSpawnHandler(TreasureHunts plugin) {
         this.plugin = plugin;
     }
 
 
     public void loadConfig() {
         FileConfiguration config = plugin.getConfig();
+        maxItemsPerChest = config.getInt("treasure-chest.max-items-per-chest", 1);
+        if (maxItemsPerChest < 1) maxItemsPerChest = 1;
+        if (maxItemsPerChest > 27) maxItemsPerChest = 27;
 
-        itemConfig = new HashMap<>();
-        for (String key : config.getConfigurationSection("treasure-chest.items").getKeys(false)) {
-            try {
-                Material material = Material.valueOf(key);
-                int quantity = config.getInt("treasure-chest.items." + key);
-                itemConfig.put(material, quantity);
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid material specified in config: " + key);
-            }
-        }
+        itemConfig = config.getConfigurationSection("treasure-chest.items").getKeys(false).stream()
+                .map(key -> {
+                    try {
+                        Material material = Material.valueOf(key);
+                        int quantity = config.getInt("treasure-chest.items." + key);
+                        return Map.entry(material, quantity);
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().log(Level.WARNING, "Invalid material specified in config: " + key, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         maxItemsPerChest = config.getInt("treasure-chest.max-items-per-chest", 1);
         if (maxItemsPerChest < 1) maxItemsPerChest = 1;
@@ -62,7 +71,7 @@ public class TreasureSpawnHandler {
             public void run() {
                 spawnTreasure();
             }
-        }.runTaskTimer(plugin, 0,spawnTime);
+        }.runTaskTimer(plugin, 0, spawnTime);
     }
 
     private void spawnTreasure() {
@@ -100,10 +109,11 @@ public class TreasureSpawnHandler {
         Location playerLocation = player.getLocation();
         World world = player.getWorld();
         Location spawnLocation = null;
+        int maxSpawnRange = plugin.getConfig().getInt("treasure-chest.max-spawn-range",100);
 
         for (int i = 0; i < 10; i++) { // Try up to 10 times to find a valid location
-            int x = playerLocation.getBlockX() + random.nextInt(100) - 50;
-            int z = playerLocation.getBlockZ() + random.nextInt(100) - 50;
+            int x = playerLocation.getBlockX() + random.nextInt(maxSpawnRange) - maxSpawnRange/2;
+            int z = playerLocation.getBlockZ() + random.nextInt(maxSpawnRange) - maxSpawnRange/2;
             int y = world.getHighestBlockYAt(x, z) - 1;
 
             Location potentialLocation = new Location(world, x, y, z);
@@ -122,38 +132,22 @@ public class TreasureSpawnHandler {
     }
 
     private void fillChestWithLoot(Location location) {
+
         if (location.getWorld() == null) return;
 
         org.bukkit.block.Chest chest = (org.bukkit.block.Chest) location.getBlock().getState();
         Inventory chestInventory = chest.getBlockInventory();
 
-        Map<Material, Integer> itemConfig = this.getItemConfig();
-        int maxItemsPerChest = this.getMaxItemsPerChest();
-
-        List<ItemStack> items = new ArrayList<>();
-        for (Map.Entry<Material, Integer> entry : itemConfig.entrySet()) {
-            Material material = entry.getKey();
-            int quantity = entry.getValue();
-            items.add(new ItemStack(material, quantity));
-        }
+        List<ItemStack> items = itemConfig.entrySet().stream()
+                .map(entry -> new ItemStack(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
 
         Collections.shuffle(items);
+        items.stream().limit(maxItemsPerChest).forEach(chestInventory::addItem);
 
-        int itemCount = Math.min(maxItemsPerChest, items.size());
-        for (int i = 0; i < itemCount; i++) {
-            ItemStack item = items.get(i);
-            if (chestInventory.firstEmpty() == -1) {
-                break;
-            }
-            chestInventory.addItem(item);
-        }
+        String traceText = "Treasure #" + chestCounter.getAndIncrement();
 
-        // Assign a unique number for this chest
-        chestCounter++;
-        String traceText = "Treasure #" + chestCounter;
-
-        // Save chest location and trace text
-        this.getActiveTreasures().put(location, traceText);
+        activeTreasures.put(location, traceText);
     }
 
     public Map<Location, String> getActiveTreasures() {
@@ -174,9 +168,7 @@ public class TreasureSpawnHandler {
 
     public void cleanupActiveChests() {
         // Remove all active chests
-        for (Map.Entry<Location, String> chests : this.getActiveTreasures().entrySet()) {
-            chests.getKey().getBlock().setType(Material.AIR);
-        }
+        getActiveTreasures().keySet().forEach(key-> key.getBlock().setType(Material.AIR));
         this.getActiveTreasures().clear();
 
         // Remove all player trace texts

@@ -12,9 +12,12 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
+
 import org.mahdi.testmode.treasurehunts.TreasureHunts;
 import org.mahdi.testmode.treasurehunts.handlers.MessageHandler;
+
+import java.util.Objects;
+
 
 public class TreasureListener implements Listener {
     private final TreasureHunts plugin;
@@ -32,17 +35,17 @@ public class TreasureListener implements Listener {
 
         if (plugin.handler.getActiveTreasures().containsKey(chestLocation)) {
             Inventory chestInventory = ((org.bukkit.block.Chest) event.getClickedBlock().getState()).getBlockInventory();
-            for (ItemStack item : chestInventory.getContents()) {
-                if (item != null) {
-                    if (player.getInventory().addItem(item).size() != 0) {
-                        player.getWorld().dropItemNaturally(player.getLocation(), item);
+            chestInventory.forEach(itemStack -> {
+                if (itemStack != null) {
+                    if (player.getInventory().addItem(itemStack).size() != 0) {
+                        player.getWorld().dropItemNaturally(player.getLocation(), itemStack);
                     }
                 }
-            }
+            });
             event.getClickedBlock().setType(Material.AIR);
             plugin.handler.removeTreasure(chestLocation);
             plugin.handler.removePlayerTrace(player);
-            Bukkit.broadcastMessage(MessageHandler.setMessageColor("&2"+player.getName() + " looted a treasure chest at " + chestLocation));
+            Bukkit.broadcastMessage(MessageHandler.setMessageColor("&2" + player.getName() + " looted a treasure chest at " + chestLocation));
         }
     }
 
@@ -52,13 +55,9 @@ public class TreasureListener implements Listener {
             event.setCancelled(true);
             if (event.getCurrentItem() != null && event.getCurrentItem().getType() == Material.CHEST) {
                 Player player = (Player) event.getWhoClicked();
-                Location treasureLocation = null;
-                for (Location location : plugin.handler.getActiveTreasures().keySet()) {
-                    if (event.getCurrentItem().getItemMeta().getDisplayName().contains(location.toString())) {
-                        treasureLocation = location;
-                        break;
-                    }
-                }
+                Location treasureLocation = plugin.handler.getActiveTreasures().keySet().stream()
+                        .findFirst().filter(key -> Objects.requireNonNull(event.getCurrentItem().getItemMeta()).getDisplayName().contains(key.toString()))
+                        .orElse(null);
                 if (treasureLocation != null) {
                     if (plugin.handler.getPlayerTraces().containsKey(player) && plugin.handler.getPlayerTraces().get(player).equals(treasureLocation)) {
                         plugin.handler.removePlayerTrace(player);
@@ -72,6 +71,7 @@ public class TreasureListener implements Listener {
             }
         }
     }
+
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
